@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Cocina</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍳 Panel de Cocina</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Cola de Pedidos</h2>
+                <button class="btn btn-primary" onclick="loadKitchenQueue()">Actualizar</button>
+            </div>
+            <div id="kitchenQueue">
+                <p>Cargando cola de pedidos...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/kitchen.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Pedidos - Login</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-box">
+                <h1>🍔 Sistema de Gestión</h1>
+                <h2>Iniciar Sesión</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Usuario:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                </form>
+                <div id="loginError" class="error-message"></div>
+                <div class="register-link">
+                    <p>¿Eres administrador y no tienes cuenta?</p>
+                    <button type="button" class="btn btn-secondary" onclick="showRegister()">Registrar Tienda</button>
+                </div>
+            </div>
+
+            <div class="register-box" id="registerBox" style="display: none;">
+                <h2>Registrar Nueva Tienda</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="storeName">Nombre de la Tienda:</label>
+                        <input type="text" id="storeName" name="storeName" required 
+                               aria-label="Nombre de la tienda" autocomplete="organization">
+                    </div>
+                    <div class="form-group">
+                        <label for="storeAddress">Dirección:</label>
+                        <input type="text" id="storeAddress" name="storeAddress" required 
+                               aria-label="Dirección de la tienda" autocomplete="street-address">
+                    </div>
+                    <div class="form-group">
+                        <label for="storePhone">Teléfono:</label>
+                        <input type="tel" id="storePhone" name="storePhone" required 
+                               aria-label="Teléfono de la tienda" autocomplete="tel">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminName">Nombre del Administrador:</label>
+                        <input type="text" id="adminName" name="adminName" required 
+                               aria-label="Nombre del administrador" autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPassword">Contraseña del Administrador:</label>
+                        <input type="password" id="adminPassword" name="adminPassword" required 
+                               aria-label="Contraseña del administrador" autocomplete="new-password" 
+                               minlength="4">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPasswordConfirm">Confirmar Contraseña:</label>
+                        <input type="password" id="adminPasswordConfirm" name="adminPasswordConfirm" required 
+                               aria-label="Confirmar contraseña" autocomplete="new-password" 
+                               minlength="4">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Registrar Tienda</button>
+                        <button type="button" class="btn btn-secondary" onclick="showLogin()">Volver al Login</button>
+                    </div>
+                </form>
+                <div id="registerError" class="error-message"></div>
+                <div id="registerSuccess" class="success-message"></div>
+            </div>
+        </div>
+    </div>
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

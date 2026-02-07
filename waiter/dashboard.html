@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Mesero</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Mesero</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showPanel('newOrder')">Nuevo Pedido</button>
+            <button class="nav-tab" onclick="showPanel('orders')">Mis Pedidos</button>
+        </div>
+
+        <!-- Panel de Nuevo Pedido -->
+        <div id="newOrder" class="content-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🍽️ Crear Nuevo Pedido</h2>
+                    <button class="btn btn-secondary" onclick="clearCurrentOrder()" id="clearOrderBtn" style="display: none;">
+                        Limpiar Pedido
+                    </button>
+                </div>
+                <div id="orderFormContainer">
+                    <div class="order-layout">
+                        <div class="order-products">
+                            <div class="section-header">
+                                <h3>📋 Productos Disponibles</h3>
+                                <input type="text" id="productSearch" placeholder="🔍 Buscar producto..." 
+                                       onkeyup="filterProducts()" class="search-input">
+                            </div>
+                            <div id="productsList">
+                                <p class="info-message">🔄 Cargando productos...</p>
+                            </div>
+                        </div>
+                        <div class="order-summary">
+                            <h3>🛒 Tu Pedido</h3>
+                            <div id="currentOrder" class="order-items-container">
+                                <div class="empty-order-message">
+                                    <p>📝 Tu pedido está vacío</p>
+                                    <p class="help-text">👉 Haz clic en "Agregar" en cualquier producto para comenzar</p>
+                                </div>
+                            </div>
+                            <div class="order-total">
+                                <strong>Total: <span id="orderTotal">$0</span></strong>
+                            </div>
+                            <button class="btn btn-primary btn-large" id="submitOrderBtn" onclick="submitOrder()" disabled>
+                                ✅ Crear Pedido
+                            </button>
+                            <p class="help-text" style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+                                Agrega al menos un producto para crear el pedido
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Pedidos -->
+        <div id="orders" class="content-panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Mis Pedidos</h2>
+                    <button class="btn btn-primary" onclick="loadOrders()">Actualizar</button>
+                </div>
+                <div id="ordersList">
+                    <p>Cargando pedidos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/waiter.js"></script>
+</body>
+</html>

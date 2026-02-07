@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Mesero</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Mesero</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showPanel('newOrder')">Nuevo Pedido</button>
+            <button class="nav-tab" onclick="showPanel('orders')">Mis Pedidos</button>
+        </div>
+
+        <!-- Panel de Nuevo Pedido -->
+        <div id="newOrder" class="content-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Crear Nuevo Pedido</h2>
+                </div>
+                <div id="orderFormContainer">
+                    <div class="form-grid">
+                        <div>
+                            <h3>Productos Disponibles</h3>
+                            <div id="productsList" class="table-container">
+                                <p>Cargando productos...</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Pedido Actual</h3>
+                            <div id="currentOrder">
+                                <p>No hay items en el pedido</p>
+                            </div>
+                            <div class="order-summary">
+                                <strong>Total: $<span id="orderTotal">0.00</span></strong>
+                            </div>
+                            <button class="btn btn-primary" onclick="submitOrder()" id="submitOrderBtn" disabled>
+                                Crear Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Pedidos -->
+        <div id="orders" class="content-panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Mis Pedidos</h2>
+                </div>
+                <div id="ordersList">
+                    <p>Cargando pedidos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/waiter.js"></script>
+</body>
+</html>

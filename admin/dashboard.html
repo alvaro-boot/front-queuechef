@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Administración</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <span id="storeName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="products.html" class="nav-tab">Productos</a>
+            <a href="toppings.html" class="nav-tab">Toppings</a>
+            <a href="users.html" class="nav-tab">Usuarios</a>
+            <a href="orders.html" class="nav-tab">Pedidos</a>
+            <a href="reports.html" class="nav-tab">Reportes</a>
+            <a href="store.html" class="nav-tab">Mi Tienda</a>
+        </div>
+
+        <div class="content-panel active">
+            <div class="card">
+                <h2>Bienvenido al Panel de Administración</h2>
+                <p>Selecciona una opción del menú para comenzar.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authManager.isAuthenticated() || !authManager.hasRole(ROLES.ADMINISTRADOR)) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            const user = authManager.getUser();
+            document.getElementById('userName').textContent = `Usuario: ${user.name}`;
+            
+            // Cargar nombre de la tienda
+            loadStoreName();
+        });
+    </script>
+</body>
+</html>

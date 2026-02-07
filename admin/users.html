@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Administración</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <span id="storeName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="dashboard.html" class="nav-tab">Inicio</a>
+            <a href="products.html" class="nav-tab">Productos</a>
+            <a href="toppings.html" class="nav-tab">Toppings</a>
+            <a href="users.html" class="nav-tab active">Usuarios</a>
+            <a href="orders.html" class="nav-tab">Pedidos</a>
+            <a href="reports.html" class="nav-tab">Reportes</a>
+            <a href="store.html" class="nav-tab">Mi Tienda</a>
+        </div>
+
+        <div class="content-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Gestión de Usuarios</h2>
+                    <button class="btn btn-primary" onclick="showUserModal()">+ Nuevo Usuario</button>
+                </div>
+                <div id="usersList" class="table-container">
+                    <p>Cargando usuarios...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Usuario -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="userModalTitle">Nuevo Usuario</h2>
+                <span class="close" onclick="closeModal('userModal')">&times;</span>
+            </div>
+            <form id="userForm" onsubmit="return false;">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label>Nombre de Usuario:</label>
+                    <input type="text" id="userNameInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="userPassword">
+                </div>
+                <div class="form-group">
+                    <label>Rol:</label>
+                    <select id="userRole" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="2">Mesero</option>
+                        <option value="3">Cocina</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Estado:</label>
+                    <select id="userStatus">
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="form-actions-inline">
+                    <button type="button" class="btn btn-primary" onclick="handleUserSubmit()">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authManager.isAuthenticated() || !authManager.hasRole(ROLES.ADMINISTRADOR)) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            const user = authManager.getUser();
+            document.getElementById('userName').textContent = `Usuario: ${user.name}`;
+            
+            loadStoreName();
+            loadRoles();
+            loadUsers();
+        });
+
+        function showUserModal(userId = null) {
+            const modal = document.getElementById('userModal');
+            const form = document.getElementById('userForm');
+            const title = document.getElementById('userModalTitle');
+            
+            if (userId) {
+                title.textContent = 'Editar Usuario';
+                loadUserData(userId);
+            } else {
+                title.textContent = 'Nuevo Usuario';
+                form.reset();
+                document.getElementById('userId').value = '';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        async function loadUserData(userId) {
+            try {
+                const user = await api.get(`${API_CONFIG.ENDPOINTS.USERS.GET}/${userId}`);
+                document.getElementById('userId').value = user.id;
+                document.getElementById('userNameInput').value = user.name;
+                document.getElementById('userRole').value = user.role_id;
+                document.getElementById('userStatus').value = user.status;
+            } catch (error) {
+                alert('Error al cargar usuario: ' + error.message);
+            }
+        }
+
+        async function editUser(id) {
+            showUserModal(id);
+        }
+
+        async function toggleUserStatus(id) {
+            try {
+                const user = await api.get(`${API_CONFIG.ENDPOINTS.USERS.GET}/${id}`);
+                const newStatus = user.status === 'activo' ? 'inactivo' : 'activo';
+                await api.patch(`${API_CONFIG.ENDPOINTS.USERS.UPDATE}/${id}`, { status: newStatus });
+                loadUsers();
+            } catch (error) {
+                alert('Error al actualizar estado: ' + error.message);
+            }
+        }
+    </script>
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+</body>
+</html>

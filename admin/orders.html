@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos - Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Administración</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <span id="storeName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="dashboard.html" class="nav-tab">Inicio</a>
+            <a href="products.html" class="nav-tab">Productos</a>
+            <a href="toppings.html" class="nav-tab">Toppings</a>
+            <a href="users.html" class="nav-tab">Usuarios</a>
+            <a href="orders.html" class="nav-tab active">Pedidos</a>
+            <a href="reports.html" class="nav-tab">Reportes</a>
+            <a href="store.html" class="nav-tab">Mi Tienda</a>
+        </div>
+
+        <div class="content-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Pedidos</h2>
+                    <button class="btn btn-primary" onclick="loadOrders()">🔄 Actualizar</button>
+                </div>
+                <div class="section-header">
+                    <select id="orderFilter" class="search-input" style="max-width: 200px;" onchange="filterOrders()">
+                        <option value="all">Todos los pedidos</option>
+                        <option value="pending">Pendientes</option>
+                        <option value="delivered">Entregados</option>
+                    </select>
+                </div>
+                <div id="ordersList">
+                    <p>Cargando pedidos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authManager.isAuthenticated() || !authManager.hasRole(ROLES.ADMINISTRADOR)) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            const user = authManager.getUser();
+            document.getElementById('userName').textContent = `Usuario: ${user.name}`;
+            
+            loadStoreName();
+            loadOrders();
+        });
+    </script>
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+</body>
+</html>

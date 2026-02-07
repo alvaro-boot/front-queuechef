@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Tienda - Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Administración</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <span id="storeName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="dashboard.html" class="nav-tab">Inicio</a>
+            <a href="products.html" class="nav-tab">Productos</a>
+            <a href="toppings.html" class="nav-tab">Toppings</a>
+            <a href="users.html" class="nav-tab">Usuarios</a>
+            <a href="orders.html" class="nav-tab">Pedidos</a>
+            <a href="reports.html" class="nav-tab">Reportes</a>
+            <a href="store.html" class="nav-tab active">Mi Tienda</a>
+        </div>
+
+        <div class="content-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Información de la Tienda</h2>
+                    <button class="btn btn-secondary" onclick="showStoreEditModal()">Editar</button>
+                </div>
+                <div id="storeInfo">
+                    <p>Cargando información...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Tienda -->
+    <div id="storeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Tienda</h2>
+                <span class="close" onclick="closeModal('storeModal')">&times;</span>
+            </div>
+            <form id="storeForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" id="storeNameInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Dirección:</label>
+                    <input type="text" id="storeAddressInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" id="storePhoneInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Estado:</label>
+                    <select id="storeStatusInput">
+                        <option value="activa">Activa</option>
+                        <option value="inactiva">Inactiva</option>
+                    </select>
+                </div>
+                <div class="form-actions-inline">
+                    <button type="button" class="btn btn-primary" onclick="handleStoreSubmit()">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('storeModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authManager.isAuthenticated() || !authManager.hasRole(ROLES.ADMINISTRADOR)) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            const user = authManager.getUser();
+            document.getElementById('userName').textContent = `Usuario: ${user.name}`;
+            
+            loadStoreInfo();
+        });
+    </script>
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos - Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard active">
+        <div class="header">
+            <h1>🍔 Panel de Administración</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <span id="storeName"></span>
+                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="dashboard.html" class="nav-tab">Inicio</a>
+            <a href="products.html" class="nav-tab active">Productos</a>
+            <a href="toppings.html" class="nav-tab">Toppings</a>
+            <a href="users.html" class="nav-tab">Usuarios</a>
+            <a href="orders.html" class="nav-tab">Pedidos</a>
+            <a href="reports.html" class="nav-tab">Reportes</a>
+            <a href="store.html" class="nav-tab">Mi Tienda</a>
+        </div>
+
+        <div class="content-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Gestión de Productos</h2>
+                    <button class="btn btn-primary" onclick="showProductModal()">+ Nuevo Producto</button>
+                </div>
+                <div class="section-header">
+                    <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="productSearch" class="search-input" placeholder="🔍 Buscar productos..." onkeyup="filterProducts()">
+                        <select id="productFilter" class="search-input" style="max-width: 200px;" onchange="filterProducts()">
+                            <option value="all">Todos</option>
+                            <option value="available">Disponibles</option>
+                            <option value="unavailable">No disponibles</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadProducts()" title="Actualizar lista">🔄</button>
+                </div>
+                <div id="productsList" class="table-container">
+                    <p>Cargando productos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Producto -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="productModalTitle">Nuevo Producto</h2>
+                <span class="close" onclick="closeModal('productModal')">&times;</span>
+            </div>
+            <form id="productForm" onsubmit="return false;" action="javascript:void(0);">
+                <input type="hidden" id="productId">
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción:</label>
+                    <textarea id="productDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Precio Base:</label>
+                    <input type="number" id="productPrice" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Disponible:</label>
+                    <input type="checkbox" id="productAvailability" checked>
+                </div>
+                <div class="form-actions-inline">
+                    <button type="button" class="btn btn-primary" id="productSubmitBtn" onclick="handleProductSubmitButton()">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authManager.isAuthenticated() || !authManager.hasRole(ROLES.ADMINISTRADOR)) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            const user = authManager.getUser();
+            document.getElementById('userName').textContent = `Usuario: ${user.name}`;
+            
+            loadStoreName();
+            loadProducts();
+        });
+    </script>
+    <div class="watermark">Desarrollado por Cotes Tech</div>
+</body>
+</html>
