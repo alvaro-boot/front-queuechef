@@ -2,11 +2,12 @@
 const API_CONFIG = {
     BASE_URL: 'https://back-queuechef.onrender.com',
     ENDPOINTS: {
-        AUTH: {
-            LOGIN: '/auth/login',
-            REGISTER: '/auth/register',
-            PROFILE: '/auth/profile'
-        },
+            AUTH: {
+                LOGIN: '/auth/login',
+                REGISTER: '/auth/register',
+                PROFILE: '/auth/profile',
+                LOGOUT: '/auth/logout'
+            },
         STORES: {
             LIST: '/stores',
             CREATE: '/stores',

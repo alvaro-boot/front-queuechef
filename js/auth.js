@@ -172,12 +172,25 @@ class AuthManager {
         return requiredRoles.includes(this.getUserRole());
     }
 
-    logout() {
+    async logout() {
         const storageKeys = typeof STORAGE_KEYS !== 'undefined' ? STORAGE_KEYS : {
             TOKEN: 'auth_token',
             USER: 'user_data',
             STORE_ID: 'store_id'
         };
+        
+        // Intentar cerrar sesión en el servidor
+        try {
+            const token = localStorage.getItem(storageKeys.TOKEN);
+            if (token && typeof api !== 'undefined' && typeof API_CONFIG !== 'undefined') {
+                await api.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT || '/auth/logout', {}, true);
+            }
+        } catch (error) {
+            console.warn('Error al cerrar sesión en el servidor:', error);
+            // Continuar con el logout local aunque falle el servidor
+        }
+        
+        // Limpiar datos locales
         localStorage.removeItem(storageKeys.TOKEN);
         localStorage.removeItem(storageKeys.USER);
         localStorage.removeItem(storageKeys.STORE_ID);
