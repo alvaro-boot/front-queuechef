@@ -540,6 +540,9 @@ async function submitOrder() {
         updateOrderDisplay();
         await loadOrders();
         
+        // Notificar que se creó un nuevo pedido para actualizar la cola de cocina
+        notifyNewOrderCreated();
+        
         // Cambiar a la vista de pedidos
         const ordersPanel = document.getElementById('orders');
         const newOrderPanel = document.getElementById('newOrder');
@@ -638,6 +641,32 @@ function displayOrders(orders) {
     });
     
     container.innerHTML = html;
+}
+
+/**
+ * Notifica que se creó un nuevo pedido para actualizar la cola de cocina
+ * Usa eventos personalizados y localStorage para funcionar entre pestañas
+ */
+function notifyNewOrderCreated() {
+    const timestamp = Date.now();
+    
+    // Actualizar localStorage para notificar a otras pestañas
+    const notificationKey = 'kitchen_queue_update';
+    localStorage.setItem(notificationKey, JSON.stringify({
+        timestamp: timestamp,
+        action: 'new_order_created'
+    }));
+    
+    // Disparar evento personalizado para la misma ventana
+    const event = new CustomEvent('newOrderCreated', {
+        detail: { timestamp, action: 'new_order_created' }
+    });
+    window.dispatchEvent(event);
+    
+    // Remover el item después de un breve delay para que el evento se dispare
+    setTimeout(() => {
+        localStorage.removeItem(notificationKey);
+    }, 100);
 }
 
 function toggleOrderDetails(orderId) {

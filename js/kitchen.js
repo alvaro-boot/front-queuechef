@@ -74,6 +74,38 @@ function initializeKitchenDashboard() {
     
     // Iniciar actualización automática cada minuto
     startAutoUpdate();
+    
+    // Escuchar eventos de nuevos pedidos creados
+    setupOrderNotifications();
+}
+
+/**
+ * Configura los listeners para detectar cuando se crea un nuevo pedido
+ * Funciona tanto en la misma pestaña como entre diferentes pestañas
+ */
+function setupOrderNotifications() {
+    // Escuchar eventos personalizados (misma pestaña)
+    window.addEventListener('newOrderCreated', (event) => {
+        console.log('Nuevo pedido detectado (misma pestaña):', event.detail);
+        loadKitchenQueue();
+        showNotification('🆕 Nuevo pedido recibido', 'info', 3000);
+    });
+    
+    // Escuchar cambios en localStorage (otras pestañas)
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'kitchen_queue_update' && event.newValue) {
+            try {
+                const data = JSON.parse(event.newValue);
+                if (data.action === 'new_order_created') {
+                    console.log('Nuevo pedido detectado (otra pestaña):', data);
+                    loadKitchenQueue();
+                    showNotification('🆕 Nuevo pedido recibido', 'info', 3000);
+                }
+            } catch (error) {
+                console.error('Error al procesar notificación de pedido:', error);
+            }
+        }
+    });
 }
 
 async function loadKitchenQueue() {
