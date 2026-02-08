@@ -51,7 +51,9 @@ class ApiClient {
                 url: response.url
             });
             
-            if (response.status === 401) {
+            // Solo manejar 401 como sesión expirada si se está usando autenticación
+            // No manejar 401 en endpoints públicos como login/register
+            if (response.status === 401 && options.includeAuth !== false) {
                 // Token expirado o inválido
                 this.handleUnauthorized();
                 throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
@@ -86,6 +88,7 @@ class ApiClient {
     }
 
     handleUnauthorized() {
+        // Limpiar datos de sesión
         if (typeof STORAGE_KEYS !== 'undefined') {
             localStorage.removeItem(STORAGE_KEYS.TOKEN);
             localStorage.removeItem(STORAGE_KEYS.USER);
@@ -95,7 +98,26 @@ class ApiClient {
             localStorage.removeItem('user_data');
             localStorage.removeItem('store_id');
         }
-        window.location.href = '/';
+        
+        // Notificar al usuario
+        if (typeof showNotification !== 'undefined') {
+            showNotification('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning', 5000);
+        }
+        
+        // Redirigir correctamente al login
+        const currentPath = window.location.pathname;
+        let loginPath = 'index.html';
+        
+        if (currentPath.includes('/admin/') || currentPath.includes('/waiter/') || currentPath.includes('/kitchen/')) {
+            loginPath = '../index.html';
+        } else if (currentPath !== '/index.html' && currentPath.endsWith('.html')) {
+            loginPath = './index.html';
+        }
+        
+        // Redirigir después de un breve delay para que el usuario vea el mensaje
+        setTimeout(() => {
+            window.location.href = loginPath;
+        }, 1500);
     }
 
     // Métodos HTTP

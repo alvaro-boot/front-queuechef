@@ -23,10 +23,21 @@ class AuthManager {
                 throw new Error('Error de configuración: API no está disponible');
             }
 
+            // Limpiar cualquier token viejo antes de intentar login
+            const storageKeys = typeof STORAGE_KEYS !== 'undefined' ? STORAGE_KEYS : {
+                TOKEN: 'auth_token',
+                USER: 'user_data',
+                STORE_ID: 'store_id'
+            };
+            localStorage.removeItem(storageKeys.TOKEN);
+            localStorage.removeItem(storageKeys.USER);
+            localStorage.removeItem(storageKeys.STORE_ID);
+            this.currentUser = null;
+
             const response = await api.post(
                 API_CONFIG.ENDPOINTS.AUTH.LOGIN,
                 { name: username, credentials: password },
-                false
+                false  // No incluir autenticación
             );
 
             if (response.access_token) {
