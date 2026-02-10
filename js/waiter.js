@@ -623,6 +623,8 @@ function displayOrders(orders) {
     
     sortedOrders.forEach(order => {
         const isDelivered = order.status === 'Entregado' || order.status === 'ENTREGADO';
+        const isInPreparation = order.is_in_preparation === true;
+        const canEdit = !isDelivered && !isInPreparation;
         const statusClass = isDelivered ? 'badge-success' : 
                           order.status === 'En proceso' ? 'badge-warning' : 'badge-info';
         
@@ -632,10 +634,11 @@ function displayOrders(orders) {
                     <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
                         <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
                         <span class="badge ${statusClass}">${order.status}</span>
+                        ${isInPreparation ? '<span class="badge badge-info" style="margin-left: 8px;">En Preparación</span>' : ''}
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <strong>${formatCurrency(order.total_amount || 0)}</strong>
-                        ${!isDelivered ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkAndEditOrder(${order.id})" title="Editar pedido">
+                        ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkAndEditOrder(${order.id})" title="Editar pedido">
                             ✏️ Editar
                         </button>` : ''}
                         <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOrder(${order.id})" title="Eliminar pedido">
