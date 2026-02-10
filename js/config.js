@@ -1,7 +1,7 @@
 // Configuración de la API
 const API_CONFIG = {
-    BASE_URL: 'https://back-queuechef.onrender.com',
-    // BASE_URL: 'http://localhost:3000',
+    //BASE_URL: 'https://back-queuechef.onrender.com',
+    BASE_URL: 'http://localhost:3000',
     ENDPOINTS: {
             AUTH: {
                 LOGIN: '/auth/login',
@@ -33,19 +33,19 @@ const API_CONFIG = {
             UPDATE: '/toppings',
             GET: '/toppings'
         },
-        ORDERS: {
-            LIST: '/orders',
-            CREATE: '/orders',
-            UPDATE: '/orders',
-            GET: '/orders',
-            DELETE: '/orders'
-        },
-        KITCHEN: {
-            QUEUE: '/kitchen/queue',
-            START: '/kitchen/queue',
-            COMPLETE: '/kitchen/queue',
-            GET: '/kitchen/queue'
-        },
+            ORDERS: {
+                LIST: '/orders',
+                CREATE: '/orders',
+                UPDATE: '/orders',
+                GET: '/orders',
+                DELETE: '/orders'
+            },
+            KITCHEN: {
+                QUEUE: '/kitchen/queue',
+                START: '/kitchen/queue',
+                COMPLETE: '/kitchen/queue',
+                GET: '/kitchen/queue'
+            },
         PAYMENTS: {
             LIST: '/payments',
             CREATE: '/payments',

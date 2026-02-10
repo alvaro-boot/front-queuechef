@@ -671,7 +671,7 @@ function displayOrders(orders) {
             <div class="order-item-card">
                 <div class="order-item-header">
                     <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
-                        <strong>Pedido #${order.id}</strong>
+                        <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
                         <span class="badge ${isDelivered ? 'badge-success' : 'badge-warning'}">${order.status}</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -682,6 +682,7 @@ function displayOrders(orders) {
                     </div>
                 </div>
                 <div class="order-item-details" id="orderDetails${order.id}" style="display: none;" onclick="event.stopPropagation();">
+                    ${order.name ? `<p><strong>Nombre:</strong> ${sanitizeString(order.name)}</p>` : ''}
                     <p><strong>Fecha:</strong> ${formatDate(order.created_at)}</p>
                     <p><strong>Mesero:</strong> ${order.waiter?.name || 'N/A'}</p>
                     ${order.preparation_time ? `<p><strong>Tiempo de preparación:</strong> ${formatPreparationTime(order.preparation_time)}</p>` : ''}

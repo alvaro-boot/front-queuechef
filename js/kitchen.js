@@ -215,7 +215,7 @@ function buildQueueItem(queueItem, isReady = false) {
         <div class="queue-item ${isReady ? 'ready' : ''} ${queueItem.kitchen_status === 'En preparación' ? 'in-progress' : ''}">
             <div class="queue-item-header">
                 <div>
-                    <strong>Pedido #${order.id}</strong>
+                    <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
                     <span class="badge ${statusClass}">${queueItem.kitchen_status}</span>
                     ${timeInProgress !== null ? `<span class="time-badge">${timeInProgress} min</span>` : ''}
                 </div>
@@ -224,6 +224,7 @@ function buildQueueItem(queueItem, isReady = false) {
                 </div>
             </div>
             <div class="order-item-details">
+                ${order.name ? `<p><strong>Nombre:</strong> ${sanitizeString(order.name)}</p>` : ''}
                 <p><strong>Hora de pedido:</strong> ${new Date(order.created_at).toLocaleString('es-ES')}</p>
                 ${queueItem.start_time ? `<p><strong>Inicio de preparación:</strong> ${new Date(queueItem.start_time).toLocaleString('es-ES')}</p>` : ''}
                 ${queueItem.end_time ? `<p><strong>Completado:</strong> ${new Date(queueItem.end_time).toLocaleString('es-ES')}</p>` : ''}

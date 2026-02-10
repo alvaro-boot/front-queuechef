@@ -44,6 +44,14 @@
                         </div>
                         <div class="order-summary">
                             <h3>🛒 Tu Pedido</h3>
+                            <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                                <label for="orderName">Nombre del Pedido (opcional):</label>
+                                <input type="text" id="orderName" placeholder="Ej: Mesa 5, Pedido de Juan..." 
+                                       maxlength="100" class="search-input" style="width: 100%;">
+                                <p class="help-text" style="font-size: 0.85em; margin-top: 4px;">
+                                    Puedes identificar el pedido con un nombre (mesa, cliente, etc.)
+                                </p>
+                            </div>
                             <div id="currentOrder" class="order-items-container">
                                 <div class="empty-order-message">
                                     <p>📝 Tu pedido está vacío</p>

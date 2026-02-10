@@ -218,6 +218,20 @@ async function clearCurrentOrder() {
     const confirmed = await confirmAction('¿Estás seguro de que quieres limpiar el pedido actual?', 'Limpiar Pedido');
     if (confirmed) {
         currentOrder.items = [];
+        
+        // Limpiar el nombre del pedido
+        const orderNameInput = document.getElementById('orderName');
+        if (orderNameInput) {
+            orderNameInput.value = '';
+        }
+        
+        // Restaurar el botón a su estado original
+        const submitBtn = document.getElementById('submitOrderBtn');
+        if (submitBtn) {
+            submitBtn.textContent = '✅ Crear Pedido';
+            submitBtn.onclick = () => submitOrder();
+        }
+        
         updateOrderDisplay();
     }
 }
@@ -494,6 +508,10 @@ async function submitOrder() {
     }
     
     try {
+        // Obtener el nombre del pedido si se proporcionó
+        const orderNameInput = document.getElementById('orderName');
+        const orderName = orderNameInput ? orderNameInput.value.trim() : '';
+        
         const orderData = {
             items: currentOrder.items.map(item => {
                 // Asegurar que product_id sea un número
@@ -525,6 +543,11 @@ async function submitOrder() {
             })
         };
         
+        // Agregar nombre del pedido si se proporcionó
+        if (orderName) {
+            orderData.name = orderName;
+        }
+        
         console.log('Enviando pedido:', JSON.stringify(orderData, null, 2));
         console.log('Tipos de datos:', orderData.items.map(item => ({
             product_id: typeof item.product_id,
@@ -537,6 +560,9 @@ async function submitOrder() {
         
         showNotification('Pedido creado exitosamente', 'success');
         currentOrder.items = [];
+        if (orderNameInput) {
+            orderNameInput.value = '';
+        }
         updateOrderDisplay();
         await loadOrders();
         
@@ -604,17 +630,21 @@ function displayOrders(orders) {
             <div class="order-item-card">
                 <div class="order-item-header">
                     <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
-                        <strong>Pedido #${order.id}</strong>
+                        <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
                         <span class="badge ${statusClass}">${order.status}</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <strong>${formatCurrency(order.total_amount || 0)}</strong>
+                        ${!isDelivered ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkAndEditOrder(${order.id})" title="Editar pedido">
+                            ✏️ Editar
+                        </button>` : ''}
                         <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOrder(${order.id})" title="Eliminar pedido">
                             🗑️
                         </button>
                     </div>
                 </div>
                 <div class="order-item-details" id="orderDetails${order.id}" style="display: none;" onclick="event.stopPropagation();">
+                    ${order.name ? `<p><strong>Nombre:</strong> ${sanitizeString(order.name)}</p>` : ''}
                     <p><strong>Fecha:</strong> ${formatDate(order.created_at)}</p>
                     ${order.preparation_time ? `<p><strong>Tiempo de preparación:</strong> ${formatPreparationTime(order.preparation_time)}</p>` : ''}
                     <p><strong>Items (${order.items?.length || 0}):</strong></p>
@@ -644,6 +674,202 @@ function displayOrders(orders) {
     });
     
     container.innerHTML = html;
+}
+
+/**
+ * Verifica si un pedido puede ser editado y lo carga para edición
+ */
+async function checkAndEditOrder(orderId) {
+    try {
+        // Cargar el pedido completo
+        const order = await api.get(`${API_CONFIG.ENDPOINTS.ORDERS.GET}/${orderId}`);
+        
+        // Verificar que el pedido no esté entregado
+        if (order.status === 'Entregado' || order.status === 'ENTREGADO') {
+            showNotification('No se puede editar un pedido que ya fue entregado', 'warning');
+            return;
+        }
+        
+        // Cargar el pedido en el formulario de edición
+        // El backend validará si el pedido está en preparación cuando se intente actualizar
+        editOrder(order);
+    } catch (error) {
+        console.error('Error al verificar pedido:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Carga un pedido en el formulario para edición
+ */
+function editOrder(order) {
+    // Limpiar el pedido actual
+    currentOrder.items = [];
+    
+    // Cargar los items del pedido en currentOrder
+    if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+            // Calcular el subtotal del item
+            const unitPrice = parseFloat(item.unit_price || item.product?.base_price || 0);
+            let subtotal = unitPrice * item.quantity;
+            
+            // Mapear toppings y calcular su precio
+            const toppings = (item.toppings || []).map(t => {
+                const toppingPrice = parseFloat(t.topping_price || t.topping?.additional_price || 0);
+                subtotal += toppingPrice * item.quantity; // Sumar el precio del topping por cantidad
+                
+                return {
+                    topping_id: t.topping_id,
+                    topping: t.topping,
+                    price: toppingPrice // Guardar el precio del topping para el cálculo
+                };
+            });
+            
+            currentOrder.items.push({
+                product_id: item.product_id,
+                product: item.product,
+                quantity: item.quantity,
+                unit_price: unitPrice,
+                subtotal: subtotal,
+                toppings: toppings
+            });
+        });
+    }
+    
+    // Cargar el nombre del pedido si existe
+    const orderNameInput = document.getElementById('orderName');
+    if (orderNameInput && order.name) {
+        orderNameInput.value = order.name;
+    }
+    
+    // Actualizar la visualización
+    updateOrderDisplay();
+    
+    // Cambiar a la vista de nuevo pedido
+    showPanel('newOrder');
+    
+    // Cambiar el botón de crear a actualizar
+    const submitBtn = document.getElementById('submitOrderBtn');
+    if (submitBtn) {
+        submitBtn.textContent = 'Actualizar Pedido';
+        submitBtn.onclick = () => updateOrder(order.id);
+    }
+    
+    showNotification('Pedido cargado para edición. Modifica los items y haz clic en "Actualizar Pedido"', 'info');
+}
+
+/**
+ * Actualiza un pedido existente
+ */
+async function updateOrder(orderId) {
+    if (currentOrder.items.length === 0) {
+        showNotification('El pedido está vacío. Debe tener al menos un producto.', 'warning');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitOrderBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Actualizando...';
+    }
+    
+    try {
+        // Obtener el nombre del pedido si se proporcionó
+        const orderNameInput = document.getElementById('orderName');
+        const orderName = orderNameInput ? orderNameInput.value.trim() : '';
+        
+        const orderData = {
+            items: currentOrder.items.map(item => {
+                const productId = typeof item.product_id === 'string' 
+                    ? parseInt(item.product_id, 10) 
+                    : Number(item.product_id);
+                
+                const quantity = typeof item.quantity === 'string' 
+                    ? parseInt(item.quantity, 10) 
+                    : Number(item.quantity);
+                
+                const toppings = (item.toppings || []).map(t => {
+                    const toppingId = typeof t.topping_id === 'string' 
+                        ? parseInt(t.topping_id, 10) 
+                        : Number(t.topping_id);
+                    
+                    return {
+                        topping_id: toppingId
+                    };
+                });
+                
+                return {
+                    product_id: productId,
+                    quantity: quantity,
+                    toppings: toppings
+                };
+            })
+        };
+        
+        // Agregar nombre del pedido si se proporcionó
+        if (orderName) {
+            orderData.name = orderName;
+        }
+        
+        console.log('Actualizando pedido:', JSON.stringify(orderData, null, 2));
+        
+        const url = `${API_CONFIG.ENDPOINTS.ORDERS.UPDATE}/${orderId}/edit`;
+        console.log('URL de actualización:', url);
+        console.log('Endpoint completo:', `${API_CONFIG.BASE_URL}${url}`);
+        
+        const response = await api.patch(url, orderData);
+        console.log('Pedido actualizado:', response);
+        
+        showNotification('Pedido actualizado exitosamente', 'success');
+        currentOrder.items = [];
+        if (orderNameInput) {
+            orderNameInput.value = '';
+        }
+        updateOrderDisplay();
+        await loadOrders();
+        
+        // Notificar que se actualizó un pedido para actualizar la cola de cocina
+        notifyNewOrderCreated();
+        
+        // Restaurar el botón
+        if (submitBtn) {
+            submitBtn.textContent = 'Crear Pedido';
+            submitBtn.onclick = () => submitOrder();
+        }
+        
+        // Cambiar a la vista de pedidos
+        const ordersPanel = document.getElementById('orders');
+        const newOrderPanel = document.getElementById('newOrder');
+        const ordersTab = document.querySelector('.nav-tab[onclick*="orders"]');
+        const newOrderTab = document.querySelector('.nav-tab[onclick*="newOrder"]');
+        
+        if (ordersPanel && newOrderPanel) {
+            newOrderPanel.classList.remove('active');
+            ordersPanel.classList.add('active');
+        }
+        
+        if (ordersTab && newOrderTab) {
+            newOrderTab.classList.remove('active');
+            ordersTab.classList.add('active');
+        }
+    } catch (error) {
+        console.error('Error al actualizar pedido:', error);
+        // Mostrar mensaje de error más específico
+        let errorMessage = error.message || 'Error desconocido';
+        if (errorMessage.includes('preparación') || errorMessage.includes('preparacion')) {
+            showNotification('No se puede modificar un pedido que ya está en preparación', 'warning');
+        } else if (errorMessage.includes('entregado') || errorMessage.includes('ENTREGADO')) {
+            showNotification('No se puede modificar un pedido que ya fue entregado', 'warning');
+        } else {
+            showNotification('Error al actualizar el pedido: ' + errorMessage, 'error');
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Crear Pedido';
+            submitBtn.onclick = () => submitOrder();
+        }
+    }
 }
 
 /**
