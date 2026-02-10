@@ -1,7 +1,7 @@
 // Configuración de la API
 const API_CONFIG = {
-    //BASE_URL: 'https://back-queuechef.onrender.com',
-    BASE_URL: 'http://localhost:3000',
+    BASE_URL: 'https://back-queuechef.onrender.com',
+    //BASE_URL: 'http://localhost:3000',
     ENDPOINTS: {
             AUTH: {
                 LOGIN: '/auth/login',
