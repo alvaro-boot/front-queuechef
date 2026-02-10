@@ -16,6 +16,61 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeWaiterDashboard();
 });
 
+/**
+ * Configura los listeners para detectar cuando un pedido inicia preparación
+ * Para actualizar automáticamente la lista de pedidos
+ */
+function setupPreparationNotifications() {
+    console.log('Configurando listeners de notificaciones de preparación...');
+    
+    // Escuchar eventos personalizados (misma pestaña)
+    window.addEventListener('orderPreparationStarted', (event) => {
+        console.log('🔄 Preparación iniciada detectada (misma pestaña):', event.detail);
+        if (event.detail && event.detail.orderId) {
+            // Recargar la lista de pedidos para reflejar el cambio
+            loadOrders();
+            showNotification('🔄 Un pedido ha iniciado preparación', 'info', 3000);
+        }
+    });
+    
+    // Escuchar cambios en localStorage (otras pestañas)
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'order_preparation_started' && event.newValue) {
+            try {
+                const data = JSON.parse(event.newValue);
+                if (data.action === 'preparation_started' && data.orderId) {
+                    console.log('🔄 Preparación iniciada detectada (otra pestaña):', data);
+                    loadOrders();
+                    showNotification('🔄 Un pedido ha iniciado preparación', 'info', 3000);
+                }
+            } catch (error) {
+                console.error('Error al procesar notificación de preparación:', error);
+            }
+        }
+    });
+    
+    // Verificación periódica como respaldo
+    setInterval(() => {
+        const lastNotification = localStorage.getItem('order_preparation_started');
+        if (lastNotification) {
+            try {
+                const data = JSON.parse(lastNotification);
+                if (data.action === 'preparation_started') {
+                    const notificationAge = Date.now() - data.timestamp;
+                    if (notificationAge < 5000) {
+                        console.log('🔄 Preparación iniciada detectada (verificación periódica):', data);
+                        loadOrders();
+                        showNotification('🔄 Un pedido ha iniciado preparación', 'info', 3000);
+                        localStorage.removeItem('order_preparation_started');
+                    }
+                }
+            } catch (error) {
+                console.error('Error al procesar notificación periódica de preparación:', error);
+            }
+        }
+    }, 2000); // Verificar cada 2 segundos
+}
+
 function initializeWaiterDashboard() {
     const user = authManager.getUser();
     const userNameEl = document.getElementById('userName');
@@ -35,6 +90,9 @@ function initializeWaiterDashboard() {
     loadProducts();
     loadToppings();
     loadOrders();
+    
+    // Configurar listeners para detectar cuando un pedido inicia preparación
+    setupPreparationNotifications();
     
     // Verificar autenticación periódicamente
     setInterval(() => {
@@ -904,24 +962,45 @@ async function deleteOrder(orderId) {
  */
 function notifyNewOrderCreated() {
     const timestamp = Date.now();
+    const notificationKey = 'kitchen_queue_update';
+    
+    // Crear el objeto de notificación
+    const notification = {
+        timestamp: timestamp,
+        action: 'new_order_created',
+        orderId: null // Se puede agregar el ID del pedido si es necesario
+    };
     
     // Actualizar localStorage para notificar a otras pestañas
-    const notificationKey = 'kitchen_queue_update';
-    localStorage.setItem(notificationKey, JSON.stringify({
-        timestamp: timestamp,
-        action: 'new_order_created'
-    }));
+    // Usar un valor único para forzar el evento storage
+    localStorage.setItem(notificationKey, JSON.stringify(notification));
     
     // Disparar evento personalizado para la misma ventana
     const event = new CustomEvent('newOrderCreated', {
-        detail: { timestamp, action: 'new_order_created' }
+        detail: notification,
+        bubbles: true
     });
     window.dispatchEvent(event);
     
-    // Remover el item después de un breve delay para que el evento se dispare
+    // También disparar el evento storage manualmente para la misma pestaña
+    // (el evento storage solo se dispara en otras pestañas)
+    if (window.dispatchEvent) {
+        const storageEvent = new StorageEvent('storage', {
+            key: notificationKey,
+            newValue: JSON.stringify(notification),
+            oldValue: null,
+            storageArea: localStorage
+        });
+        // No podemos disparar StorageEvent manualmente, así que usamos CustomEvent
+    }
+    
+    console.log('Notificación de nuevo pedido enviada:', notification);
+    
+    // Remover el item después de un breve delay para permitir que el evento se dispare
+    // pero mantenerlo el tiempo suficiente para que otras pestañas lo detecten
     setTimeout(() => {
         localStorage.removeItem(notificationKey);
-    }, 100);
+    }, 500);
 }
 
 function toggleOrderDetails(orderId) {

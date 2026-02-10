@@ -44,14 +44,15 @@ function startAutoUpdate() {
     // Limpiar intervalos existentes si los hay
     clearIntervals();
     
-    // Actualizar cada minuto (60000 ms)
+    // Actualizar cada 10 segundos para detectar cambios rápidamente
+    // Además de las actualizaciones inmediatas por eventos
     queueUpdateInterval = setInterval(() => {
         if (authManager.isAuthenticated() && authManager.hasRole(ROLES.COCINA)) {
             loadKitchenQueue();
         } else {
             clearIntervals();
         }
-    }, 60000); // 60 segundos = 1 minuto
+    }, 10000); // 10 segundos para detectar cambios más rápido
     
     // Verificar autenticación cada minuto
     authCheckInterval = setInterval(() => {
@@ -84,9 +85,11 @@ function initializeKitchenDashboard() {
  * Funciona tanto en la misma pestaña como entre diferentes pestañas
  */
 function setupOrderNotifications() {
+    console.log('Configurando listeners de notificaciones de pedidos...');
+    
     // Escuchar eventos personalizados (misma pestaña)
     window.addEventListener('newOrderCreated', (event) => {
-        console.log('Nuevo pedido detectado (misma pestaña):', event.detail);
+        console.log('🆕 Nuevo pedido detectado (misma pestaña):', event.detail);
         loadKitchenQueue();
         showNotification('🆕 Nuevo pedido recibido', 'info', 3000);
     });
@@ -97,7 +100,7 @@ function setupOrderNotifications() {
             try {
                 const data = JSON.parse(event.newValue);
                 if (data.action === 'new_order_created') {
-                    console.log('Nuevo pedido detectado (otra pestaña):', data);
+                    console.log('🆕 Nuevo pedido detectado (otra pestaña):', data);
                     loadKitchenQueue();
                     showNotification('🆕 Nuevo pedido recibido', 'info', 3000);
                 }
@@ -106,6 +109,31 @@ function setupOrderNotifications() {
             }
         }
     });
+    
+    // También verificar periódicamente si hay cambios en localStorage
+    // Esto es un respaldo en caso de que los eventos no funcionen
+    // Usar un intervalo más corto para detectar cambios más rápido
+    setInterval(() => {
+        const lastNotification = localStorage.getItem('kitchen_queue_update');
+        if (lastNotification) {
+            try {
+                const data = JSON.parse(lastNotification);
+                if (data.action === 'new_order_created') {
+                    // Verificar si la notificación es reciente (últimos 5 segundos)
+                    const notificationAge = Date.now() - data.timestamp;
+                    if (notificationAge < 5000) {
+                        console.log('🆕 Nuevo pedido detectado (verificación periódica):', data);
+                        loadKitchenQueue(true); // Actualizar sin mostrar logs adicionales
+                        showNotification('🆕 Nuevo pedido recibido', 'info', 3000);
+                        // Limpiar la notificación después de procesarla
+                        localStorage.removeItem('kitchen_queue_update');
+                    }
+                }
+            } catch (error) {
+                console.error('Error al procesar notificación periódica:', error);
+            }
+        }
+    }, 2000); // Verificar cada 2 segundos
 }
 
 async function loadKitchenQueue() {
@@ -303,6 +331,11 @@ async function startPreparation(queueId) {
         console.log('Preparación iniciada:', response);
         showNotification('Preparación iniciada', 'success');
         await loadKitchenQueue();
+        
+        // Notificar que se inició la preparación de un pedido
+        if (response && response.order && response.order.id) {
+            notifyOrderPreparationStarted(response.order.id);
+        }
     } catch (error) {
         console.error('Error al iniciar preparación:', error);
         showNotification('Error al iniciar preparación: ' + (error.message || 'Error desconocido'), 'error');
