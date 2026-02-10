@@ -31,26 +31,22 @@ async function loadStoreName(elementId = 'storeName') {
 }
 
 /**
- * Formatea el tiempo de preparación en segundos a un formato legible (ej: "5 min 30 seg")
- * @param {number} seconds - Tiempo en segundos
- * @returns {string} - Tiempo formateado (ej: "5 min 30 seg" o "45 seg")
+ * Formatea el tiempo de preparación en minutos a un formato legible (ej: "5 min")
+ * @param {number} minutes - Tiempo en minutos
+ * @returns {string} - Tiempo formateado (ej: "5 min")
  */
-function formatPreparationTime(seconds) {
-    if (!seconds || seconds === null || seconds === undefined || isNaN(seconds)) {
+function formatPreparationTime(minutes) {
+    if (!minutes || minutes === null || minutes === undefined || isNaN(minutes)) {
         return 'N/A';
     }
     
-    const totalSeconds = Math.round(Number(seconds));
-    const minutes = Math.floor(totalSeconds / 60);
-    const remainingSeconds = totalSeconds % 60;
+    const totalMinutes = Math.round(Number(minutes));
     
-    if (minutes === 0) {
-        return `${remainingSeconds} seg`;
-    } else if (remainingSeconds === 0) {
-        return `${minutes} min`;
-    } else {
-        return `${minutes} min ${remainingSeconds} seg`;
+    if (totalMinutes === 0) {
+        return '0 min';
     }
+    
+    return `${totalMinutes} min`;
 }
 
 /**

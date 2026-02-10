@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeAdminDashboard();
 });
 
+// Variable para prevenir doble envío
+let isSubmittingProduct = false;
+
 function initializeAdminDashboard() {
     // Cargar información del usuario
     const user = authManager.getUser();
@@ -28,28 +31,36 @@ function initializeAdminDashboard() {
     loadUsers();
     loadOrders();
     
-    // Event listeners - usar delegación de eventos para que funcione siempre
-    document.addEventListener('submit', function(e) {
-        if (e.target && e.target.id === 'productForm') {
+    // Configurar listener único para el formulario de productos
+    const productForm = document.getElementById('productForm');
+    if (productForm) {
+        // Remover listeners anteriores si existen
+        const newForm = productForm.cloneNode(true);
+        productForm.parentNode.replaceChild(newForm, productForm);
+        
+        // Agregar listener único al formulario
+        const updatedForm = document.getElementById('productForm');
+        updatedForm.addEventListener('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
             handleProductSubmit(e);
             return false;
-        }
-    }, true);
+        }, { once: false });
+    }
     
-    // También agregar listener directo al botón como respaldo
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.id === 'productSubmitBtn') {
+    // Configurar listener para el botón de submit
+    // No clonar el botón para mantener el onclick inline del HTML
+    const submitBtn = document.getElementById('productSubmitBtn');
+    if (submitBtn) {
+        // Remover listeners anteriores si existen (pero mantener el onclick inline)
+        submitBtn.onclick = null; // Limpiar onclick anterior si existe
+        submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            const form = document.getElementById('productForm');
-            if (form) {
-                handleProductSubmit({ target: form, preventDefault: () => {}, stopPropagation: () => {} });
-            }
+            handleProductSubmitButton();
             return false;
-        }
-    });
+        }, { once: false });
+    }
     
     // Verificar autenticación periódicamente
     setInterval(() => {
@@ -208,15 +219,8 @@ function showProductModal(productId = null) {
     const form = document.getElementById('productForm');
     const title = document.getElementById('productModalTitle');
     
-    // Asegurar que el event listener esté activo
-    if (form) {
-        form.onsubmit = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            handleProductSubmit(e);
-            return false;
-        };
-    }
+    // Resetear la bandera de envío
+    isSubmittingProduct = false;
     
     if (productId) {
         title.textContent = 'Editar Producto';
@@ -224,9 +228,13 @@ function showProductModal(productId = null) {
         loadProductData(productId);
     } else {
         title.textContent = 'Nuevo Producto';
-        form.reset();
-        document.getElementById('productId').value = '';
-        document.getElementById('productAvailability').checked = true;
+        if (form) {
+            form.reset();
+            const productIdInput = document.getElementById('productId');
+            const productAvailabilityInput = document.getElementById('productAvailability');
+            if (productIdInput) productIdInput.value = '';
+            if (productAvailabilityInput) productAvailabilityInput.checked = true;
+        }
     }
     
     if (modal) {
@@ -250,17 +258,34 @@ async function loadProductData(productId) {
 
 // Función para ser llamada desde el botón directamente
 async function handleProductSubmitButton() {
-    console.log('handleProductSubmitButton llamado');
-    const fakeEvent = {
-        target: document.getElementById('productForm'),
-        preventDefault: () => {},
-        stopPropagation: () => {}
-    };
-    await handleProductSubmit(fakeEvent);
+    if (isSubmittingProduct) {
+        console.log('Ya se está procesando un envío, ignorando...');
+        return false;
+    }
+    
+    const form = document.getElementById('productForm');
+    if (form) {
+        const fakeEvent = {
+            target: form,
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        };
+        await handleProductSubmit(fakeEvent);
+    }
+    return false;
 }
 
 async function handleProductSubmit(e) {
+    // Prevenir doble envío
+    if (isSubmittingProduct) {
+        console.log('Ya se está procesando un envío, ignorando...');
+        return false;
+    }
+    
     console.log('handleProductSubmit llamado', e);
+    
+    // Marcar como en proceso
+    isSubmittingProduct = true;
     
     // Prevenir el comportamiento por defecto del formulario
     if (e && e.preventDefault) {
@@ -271,7 +296,8 @@ async function handleProductSubmit(e) {
     }
     
     // Deshabilitar el botón de submit para evitar doble envío
-    const submitButton = e?.target?.querySelector('button[type="submit"]') || 
+    const form = e?.target || document.getElementById('productForm');
+    const submitButton = form?.querySelector('button[type="submit"]') || 
                          document.querySelector('#productForm button[type="submit"]');
     if (submitButton) {
         submitButton.disabled = true;
@@ -300,6 +326,7 @@ async function handleProductSubmit(e) {
         
             if (!productData.name || productData.name.trim().length === 0) {
                 showNotification('El nombre del producto es requerido', 'warning');
+                isSubmittingProduct = false;
                 if (submitButton) {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Guardar';
@@ -349,7 +376,8 @@ async function handleProductSubmit(e) {
         
         showNotification('Error al guardar el producto: ' + errorMessage, 'error');
     } finally {
-        // Rehabilitar el botón
+        // Rehabilitar el botón y resetear la bandera
+        isSubmittingProduct = false;
         const submitButton = document.querySelector('#productForm button[type="submit"]');
         if (submitButton) {
             submitButton.disabled = false;
@@ -640,17 +668,20 @@ function displayOrders(orders) {
     orders.forEach(order => {
         const isDelivered = order.status === 'Entregado' || order.status === 'ENTREGADO';
         html += `
-            <div class="order-item-card" onclick="toggleOrderDetails(${order.id})" style="cursor: pointer;">
+            <div class="order-item-card">
                 <div class="order-item-header">
-                    <div>
+                    <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
                         <strong>Pedido #${order.id}</strong>
                         <span class="badge ${isDelivered ? 'badge-success' : 'badge-warning'}">${order.status}</span>
                     </div>
-                    <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
                         <strong>${formatCurrency(order.total_amount)}</strong>
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOrder(${order.id})" title="Eliminar pedido">
+                            🗑️
+                        </button>
                     </div>
                 </div>
-                <div class="order-item-details" id="orderDetails${order.id}" style="display: none;">
+                <div class="order-item-details" id="orderDetails${order.id}" style="display: none;" onclick="event.stopPropagation();">
                     <p><strong>Fecha:</strong> ${formatDate(order.created_at)}</p>
                     <p><strong>Mesero:</strong> ${order.waiter?.name || 'N/A'}</p>
                     ${order.preparation_time ? `<p><strong>Tiempo de preparación:</strong> ${formatPreparationTime(order.preparation_time)}</p>` : ''}
@@ -685,6 +716,29 @@ function toggleOrderDetails(orderId) {
     const details = document.getElementById(`orderDetails${orderId}`);
     if (details) {
         details.style.display = details.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+/**
+ * Elimina (desactiva) un pedido
+ */
+async function deleteOrder(orderId) {
+    const confirmed = await confirmAction(
+        '¿Estás seguro de que deseas eliminar este pedido? El pedido se desactivará y no aparecerá en los listados, pero se mantendrá en la base de datos.',
+        'Confirmar Eliminación'
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        await api.delete(`${API_CONFIG.ENDPOINTS.ORDERS.DELETE}/${orderId}`);
+        showNotification('Pedido eliminado exitosamente', 'success');
+        await loadOrders();
+    } catch (error) {
+        console.error('Error al eliminar pedido:', error);
+        showNotification(`Error al eliminar pedido: ${error.message}`, 'error');
     }
 }
 

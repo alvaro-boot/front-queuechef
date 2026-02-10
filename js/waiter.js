@@ -601,17 +601,20 @@ function displayOrders(orders) {
                           order.status === 'En proceso' ? 'badge-warning' : 'badge-info';
         
         html += `
-            <div class="order-item-card" onclick="toggleOrderDetails(${order.id})" style="cursor: pointer;">
+            <div class="order-item-card">
                 <div class="order-item-header">
-                    <div>
+                    <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
                         <strong>Pedido #${order.id}</strong>
                         <span class="badge ${statusClass}">${order.status}</span>
                     </div>
-                    <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
                         <strong>${formatCurrency(order.total_amount || 0)}</strong>
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOrder(${order.id})" title="Eliminar pedido">
+                            🗑️
+                        </button>
                     </div>
                 </div>
-                <div class="order-item-details" id="orderDetails${order.id}" style="display: none;">
+                <div class="order-item-details" id="orderDetails${order.id}" style="display: none;" onclick="event.stopPropagation();">
                     <p><strong>Fecha:</strong> ${formatDate(order.created_at)}</p>
                     ${order.preparation_time ? `<p><strong>Tiempo de preparación:</strong> ${formatPreparationTime(order.preparation_time)}</p>` : ''}
                     <p><strong>Items (${order.items?.length || 0}):</strong></p>
@@ -641,6 +644,29 @@ function displayOrders(orders) {
     });
     
     container.innerHTML = html;
+}
+
+/**
+ * Elimina (desactiva) un pedido
+ */
+async function deleteOrder(orderId) {
+    const confirmed = await confirmAction(
+        '¿Estás seguro de que deseas eliminar este pedido? El pedido se desactivará y no aparecerá en los listados, pero se mantendrá en la base de datos.',
+        'Confirmar Eliminación'
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        await api.delete(`${API_CONFIG.ENDPOINTS.ORDERS.DELETE}/${orderId}`);
+        showNotification('Pedido eliminado exitosamente', 'success');
+        await loadOrders();
+    } catch (error) {
+        console.error('Error al eliminar pedido:', error);
+        showNotification(`Error al eliminar pedido: ${error.message}`, 'error');
+    }
 }
 
 /**
