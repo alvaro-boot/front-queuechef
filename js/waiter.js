@@ -699,9 +699,9 @@ function displayOrders(orders) {
                         ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkAndEditOrder(${order.id})" title="Editar pedido">
                             ✏️ Editar
                         </button>` : ''}
-                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOrder(${order.id})" title="Eliminar pedido">
+                        ${!isDelivered ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOrder(${order.id})" title="Eliminar pedido">
                             🗑️
-                        </button>
+                        </button>` : ''}
                     </div>
                 </div>
                 <div class="order-item-details" id="orderDetails${order.id}" style="display: none;" onclick="event.stopPropagation();">
@@ -937,16 +937,25 @@ async function updateOrder(orderId) {
  * Elimina (desactiva) un pedido
  */
 async function deleteOrder(orderId) {
-    const confirmed = await confirmAction(
-        '¿Estás seguro de que deseas eliminar este pedido? El pedido se desactivará y no aparecerá en los listados, pero se mantendrá en la base de datos.',
-        'Confirmar Eliminación'
-    );
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
+        // Primero verificar el estado del pedido
+        const order = await api.get(`${API_CONFIG.ENDPOINTS.ORDERS.GET}/${orderId}`);
+        
+        // Verificar que el pedido no esté entregado
+        if (order.status === 'Entregado' || order.status === 'ENTREGADO') {
+            showNotification('No se puede eliminar un pedido que ya fue entregado', 'warning');
+            return;
+        }
+        
+        const confirmed = await confirmAction(
+            '¿Estás seguro de que deseas eliminar este pedido? El pedido se desactivará y no aparecerá en los listados, pero se mantendrá en la base de datos.',
+            'Confirmar Eliminación'
+        );
+        
+        if (!confirmed) {
+            return;
+        }
+        
         await api.delete(`${API_CONFIG.ENDPOINTS.ORDERS.DELETE}/${orderId}`);
         showNotification('Pedido eliminado exitosamente', 'success');
         await loadOrders();
