@@ -11,27 +11,27 @@
         <div class="header">
             <h1>🍔 Panel de Administración</h1>
             <div class="user-info">
-                <span id="userName"></span>
-                <span id="storeName"></span>
-                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+                <span id="userName">👤 Usuario</span>
+                <span id="storeName">🏪 Tienda</span>
+                <button class="btn btn-danger" onclick="authManager.logout()">🚪 Cerrar Sesión</button>
             </div>
         </div>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showPanel('products')">Productos</button>
-            <button class="nav-tab" onclick="showPanel('toppings')">Toppings</button>
-            <button class="nav-tab" onclick="showPanel('users')">Usuarios</button>
-            <button class="nav-tab" onclick="showPanel('orders')">Pedidos</button>
-            <button class="nav-tab" onclick="showPanel('reports')">Reportes</button>
-            <button class="nav-tab" onclick="showPanel('store')">Mi Tienda</button>
+            <button class="nav-tab active" onclick="showPanel('products')">📦 Productos</button>
+            <button class="nav-tab" onclick="showPanel('toppings')">🍕 Toppings</button>
+            <button class="nav-tab" onclick="showPanel('users')">👥 Usuarios</button>
+            <button class="nav-tab" onclick="showPanel('orders')">📋 Pedidos</button>
+            <button class="nav-tab" onclick="showPanel('reports')">📊 Reportes</button>
+            <button class="nav-tab" onclick="showPanel('store')">🏪 Mi Tienda</button>
         </div>
 
         <!-- Panel de Productos -->
         <div id="products" class="content-panel active">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Gestión de Productos</h2>
-                    <button class="btn btn-primary" onclick="showProductModal()">+ Nuevo Producto</button>
+                    <h2 class="card-title">📦 Gestión de Productos</h2>
+                    <button class="btn btn-primary" onclick="showProductModal()">➕ Nuevo Producto</button>
                 </div>
                 <div id="productsList" class="table-container">
                     <p>Cargando productos...</p>
@@ -43,8 +43,8 @@
         <div id="toppings" class="content-panel">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Gestión de Toppings</h2>
-                    <button class="btn btn-primary" onclick="showToppingModal()">+ Nuevo Topping</button>
+                    <h2 class="card-title">🍕 Gestión de Toppings</h2>
+                    <button class="btn btn-primary" onclick="showToppingModal()">➕ Nuevo Topping</button>
                 </div>
                 <div id="toppingsList" class="table-container">
                     <p>Cargando toppings...</p>
@@ -56,8 +56,8 @@
         <div id="users" class="content-panel">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Gestión de Usuarios</h2>
-                    <button class="btn btn-primary" onclick="showUserModal()">+ Nuevo Usuario</button>
+                    <h2 class="card-title">👥 Gestión de Usuarios</h2>
+                    <button class="btn btn-primary" onclick="showUserModal()">➕ Nuevo Usuario</button>
                 </div>
                 <div id="usersList" class="table-container">
                     <p>Cargando usuarios...</p>
@@ -69,7 +69,36 @@
         <div id="orders" class="content-panel">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Pedidos</h2>
+                    <h2 class="card-title">📋 Pedidos</h2>
+                    <button class="btn btn-primary" onclick="loadOrders()">🔄 Actualizar</button>
+                </div>
+                <div class="section-header" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--light-color); border-radius: var(--radius-lg);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="orderFilter" style="font-weight: 600; font-size: var(--font-size-sm); color: var(--dark-color); white-space: nowrap;">Estado:</label>
+                        <select id="orderFilter" class="search-input" style="min-width: 180px; max-width: 200px;" onchange="filterOrders()">
+                            <option value="all">Todos los pedidos</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="delivered">Entregados</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="orderDateFilter" style="font-weight: 600; font-size: var(--font-size-sm); color: var(--dark-color); white-space: nowrap;">Fecha:</label>
+                        <select id="orderDateFilter" class="search-input" style="min-width: 180px; max-width: 200px;" onchange="applyDateFilter()">
+                            <option value="today">Hoy</option>
+                            <option value="yesterday">Ayer</option>
+                            <option value="week">Esta semana</option>
+                            <option value="month">Este mes</option>
+                            <option value="custom">Rango personalizado</option>
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div id="customDateRange" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <label for="orderStartDate" style="font-size: var(--font-size-sm); font-weight: 600;">Desde:</label>
+                        <input type="date" id="orderStartDate" class="search-input" style="max-width: 150px;">
+                        <label for="orderEndDate" style="font-size: var(--font-size-sm); font-weight: 600;">Hasta:</label>
+                        <input type="date" id="orderEndDate" class="search-input" style="max-width: 150px;">
+                        <button class="btn btn-primary btn-sm" onclick="applyCustomDateFilter()">Aplicar</button>
+                    </div>
                 </div>
                 <div id="ordersList">
                     <p>Cargando pedidos...</p>
@@ -81,7 +110,7 @@
         <div id="reports" class="content-panel">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Reportes y Estadísticas</h2>
+                    <h2 class="card-title">📊 Reportes y Estadísticas</h2>
                 </div>
                 <div id="reportsContent">
                     <div class="form-group">
@@ -99,8 +128,8 @@
         <div id="store" class="content-panel">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Información de la Tienda</h2>
-                    <button class="btn btn-secondary" onclick="showStoreEditModal()">Editar</button>
+                    <h2 class="card-title">🏪 Información de la Tienda</h2>
+                    <button class="btn btn-secondary" onclick="showStoreEditModal()">✏️ Editar</button>
                 </div>
                 <div id="storeInfo">
                     <p>Cargando información...</p>
@@ -113,8 +142,8 @@
     <div id="productModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="productModalTitle">Nuevo Producto</h2>
-                <span class="close" onclick="closeModal('productModal')">&times;</span>
+                <h2 id="productModalTitle">📦 Nuevo Producto</h2>
+                <span class="close" onclick="closeModal('productModal')" title="Cerrar">&times;</span>
             </div>
             <form id="productForm" onsubmit="return false;" action="javascript:void(0);">
                 <input type="hidden" id="productId">

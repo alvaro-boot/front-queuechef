@@ -606,6 +606,9 @@ function displayUsers(users) {
 // Gestión de Pedidos
 let allOrders = [];
 let filteredOrders = [];
+let currentDateFilter = 'today'; // Filtro de fecha actual
+let customStartDate = null;
+let customEndDate = null;
 
 async function loadOrders() {
     const container = document.getElementById('ordersList');
@@ -614,7 +617,31 @@ async function loadOrders() {
     showLoading(container);
     
     try {
-        allOrders = await api.get(API_CONFIG.ENDPOINTS.ORDERS.LIST) || [];
+        // Construir URL con parámetros de fecha si es necesario
+        let url = API_CONFIG.ENDPOINTS.ORDERS.LIST;
+        const dateParams = getDateFilterParams();
+        const dateFilter = document.getElementById('orderDateFilter')?.value || 'today';
+        
+        const params = new URLSearchParams();
+        
+        if (dateFilter === 'all') {
+            // Para "Todos", usar el parámetro allDates
+            params.append('allDates', 'true');
+        } else if (dateParams.startDate || dateParams.endDate) {
+            // Si hay fechas específicas, enviarlas
+            if (dateParams.startDate) {
+                params.append('startDate', dateParams.startDate.toISOString());
+            }
+            if (dateParams.endDate) {
+                params.append('endDate', dateParams.endDate.toISOString());
+            }
+        }
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        allOrders = await api.get(url) || [];
         filteredOrders = [...allOrders];
         filterOrders();
     } catch (error) {
@@ -624,6 +651,96 @@ async function loadOrders() {
             `<div class="error-message active">Error al cargar pedidos: ${errorMessage}</div>`;
         showNotification('Error al cargar pedidos', 'error');
     }
+}
+
+/**
+ * Obtiene los parámetros de fecha según el filtro seleccionado
+ */
+function getDateFilterParams() {
+    const dateFilter = document.getElementById('orderDateFilter')?.value || 'today';
+    const now = new Date();
+    let startDate = null;
+    let endDate = null;
+    
+    switch (dateFilter) {
+        case 'today':
+            startDate = new Date(now);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(now);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+        case 'yesterday':
+            startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - 1);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+        case 'week':
+            startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(now);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+        case 'month':
+            startDate = new Date(now);
+            startDate.setDate(1);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(now);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+        case 'custom':
+            const startDateInput = document.getElementById('orderStartDate');
+            const endDateInput = document.getElementById('orderEndDate');
+            if (startDateInput && startDateInput.value) {
+                startDate = new Date(startDateInput.value);
+                startDate.setHours(0, 0, 0, 0);
+            }
+            if (endDateInput && endDateInput.value) {
+                endDate = new Date(endDateInput.value);
+                endDate.setHours(23, 59, 59, 999);
+            }
+            break;
+        case 'all':
+        default:
+            // Para "Todos", no enviar fechas y usar el parámetro allDates
+            startDate = null;
+            endDate = null;
+            break;
+    }
+    
+    return { startDate, endDate };
+}
+
+/**
+ * Aplica el filtro de fecha seleccionado
+ */
+function applyDateFilter() {
+    const dateFilter = document.getElementById('orderDateFilter')?.value || 'today';
+    currentDateFilter = dateFilter;
+    
+    const customDateRange = document.getElementById('customDateRange');
+    if (dateFilter === 'custom') {
+        if (customDateRange) {
+            customDateRange.style.display = 'flex';
+            customDateRange.style.alignItems = 'center';
+            customDateRange.style.gap = '10px';
+            customDateRange.style.flexWrap = 'wrap';
+        }
+    } else {
+        if (customDateRange) {
+            customDateRange.style.display = 'none';
+        }
+        loadOrders();
+    }
+}
+
+/**
+ * Aplica el filtro de rango de fechas personalizado
+ */
+function applyCustomDateFilter() {
+    loadOrders();
 }
 
 function filterOrders() {
@@ -671,7 +788,7 @@ function displayOrders(orders) {
             <div class="order-item-card">
                 <div class="order-item-header">
                     <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
-                        <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
+                        <strong>Pedido #${order.daily_order_number || order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
                         <span class="badge ${isDelivered ? 'badge-success' : 'badge-warning'}">${order.status}</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -731,15 +848,6 @@ async function deleteOrder(orderId) {
         // Verificar que el pedido no esté entregado
         if (order.status === 'Entregado' || order.status === 'ENTREGADO') {
             showNotification('No se puede eliminar un pedido que ya fue entregado', 'warning');
-            return;
-        }
-        
-        const confirmed = await confirmAction(
-            '¿Estás seguro de que deseas eliminar este pedido? El pedido se desactivará y no aparecerá en los listados, pero se mantendrá en la base de datos.',
-            'Confirmar Eliminación'
-        );
-        
-        if (!confirmed) {
             return;
         }
         

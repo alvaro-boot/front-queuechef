@@ -176,59 +176,77 @@ function updateLastUpdateTime(isError = false) {
 }
 
 function displayKitchenQueue(queue) {
-    const container = document.getElementById('kitchenQueue');
+    const requestedContent = document.getElementById('requestedContent');
+    const inProgressContent = document.getElementById('inProgressContent');
+    const completedContent = document.getElementById('completedContent');
+    const requestedCount = document.getElementById('requestedCount');
+    const inProgressCount = document.getElementById('inProgressCount');
+    const completedCount = document.getElementById('completedCount');
     
-    if (!container) {
-        console.error('Container kitchenQueue no encontrado');
+    if (!requestedContent || !inProgressContent || !completedContent) {
+        console.error('Contenedores de columnas no encontrados');
         return;
     }
     
     if (!queue || queue.length === 0) {
-        container.innerHTML = '<p class="info-message">No hay pedidos en la cola</p>';
+        requestedContent.innerHTML = '<p class="info-message">No hay pedidos solicitados</p>';
+        inProgressContent.innerHTML = '<p class="info-message">No hay pedidos en preparación</p>';
+        completedContent.innerHTML = '<p class="info-message">No hay pedidos completados</p>';
+        if (requestedCount) requestedCount.textContent = '0';
+        if (inProgressCount) inProgressCount.textContent = '0';
+        if (completedCount) completedCount.textContent = '0';
         return;
     }
     
     // Separar pedidos por estado
-    const pendingOrders = queue.filter(q => q.kitchen_status === 'Pendiente');
-    const inProgressOrders = queue.filter(q => q.kitchen_status === 'En preparación');
-    const readyOrders = queue.filter(q => q.kitchen_status === 'Listo');
+    // Solicitados: Pendientes (sin start_time)
+    const requestedOrders = queue.filter(q => q.kitchen_status === 'Pendiente' || (!q.start_time && !q.end_time));
     
-    let html = '';
+    // En preparación: Con start_time pero sin end_time
+    const inProgressOrders = queue.filter(q => q.kitchen_status === 'En preparación' || (q.start_time && !q.end_time));
     
-    // Mostrar pedidos en preparación primero
+    // Completados: Con end_time (todos los del día)
+    const completedOrders = queue.filter(q => q.kitchen_status === 'Listo' || q.end_time)
+        .sort((a, b) => new Date(b.end_time || b.order?.created_at) - new Date(a.end_time || a.order?.created_at));
+    
+    // Mostrar pedidos solicitados
+    if (requestedOrders.length > 0) {
+        let html = '';
+        requestedOrders.forEach(queueItem => {
+            html += buildQueueItem(queueItem);
+        });
+        requestedContent.innerHTML = html;
+        if (requestedCount) requestedCount.textContent = requestedOrders.length;
+    } else {
+        requestedContent.innerHTML = '<p class="info-message">No hay pedidos solicitados</p>';
+        if (requestedCount) requestedCount.textContent = '0';
+    }
+    
+    // Mostrar pedidos en preparación
     if (inProgressOrders.length > 0) {
-        html += '<h3 class="section-title">🔄 En Preparación</h3>';
+        let html = '';
         inProgressOrders.forEach(queueItem => {
             html += buildQueueItem(queueItem);
         });
+        inProgressContent.innerHTML = html;
+        if (inProgressCount) inProgressCount.textContent = inProgressOrders.length;
+    } else {
+        inProgressContent.innerHTML = '<p class="info-message">No hay pedidos en preparación</p>';
+        if (inProgressCount) inProgressCount.textContent = '0';
     }
     
-    // Luego pedidos pendientes
-    if (pendingOrders.length > 0) {
-        html += '<h3 class="section-title">⏳ Pendientes</h3>';
-        pendingOrders.forEach(queueItem => {
-            html += buildQueueItem(queueItem);
-        });
-    }
-    
-    // Finalmente pedidos listos (últimos 5)
-    if (readyOrders.length > 0) {
-        const recentReady = readyOrders
-            .sort((a, b) => new Date(b.end_time) - new Date(a.end_time))
-            .slice(0, 5);
-        
-        html += '<h3 class="section-title">✅ Recientemente Completados</h3>';
-        recentReady.forEach(queueItem => {
+    // Mostrar pedidos completados (todos los del día)
+    if (completedOrders.length > 0) {
+        let html = '';
+        completedOrders.forEach(queueItem => {
             html += buildQueueItem(queueItem, true);
         });
+        completedContent.innerHTML = html;
+        if (completedCount) completedCount.textContent = completedOrders.length;
+    } else {
+        completedContent.innerHTML = '<p class="info-message">No hay pedidos completados</p>';
+        if (completedCount) completedCount.textContent = '0';
     }
-    
-    if (html === '') {
-        container.innerHTML = '<p class="info-message">No hay pedidos activos</p>';
-        return;
-    }
-    
-    container.innerHTML = html;
 }
 
 function buildQueueItem(queueItem, isReady = false) {
@@ -239,20 +257,42 @@ function buildQueueItem(queueItem, isReady = false) {
     const timeInProgress = queueItem.start_time ? 
         Math.floor((new Date() - new Date(queueItem.start_time)) / 60000) : null;
     
+    // Construir el botón de acción
+    let actionButton = '';
+    if (queueItem.kitchen_status === 'Pendiente') {
+        actionButton = `
+            <button class="btn btn-primary" onclick="startPreparation(${queueItem.id})">
+                ▶️ Iniciar Preparación
+            </button>
+        `;
+    } else if (queueItem.kitchen_status === 'En preparación') {
+        actionButton = `
+            <button class="btn btn-success" onclick="completePreparation(${queueItem.id})">
+                ✅ Marcar como Listo
+            </button>
+        `;
+    }
+    
     let html = `
         <div class="queue-item ${isReady ? 'ready' : ''} ${queueItem.kitchen_status === 'En preparación' ? 'in-progress' : ''}">
             <div class="queue-item-header">
-                <div>
-                    <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
-                    <span class="badge ${statusClass}">${queueItem.kitchen_status}</span>
-                    ${timeInProgress !== null ? `<span class="time-badge">${timeInProgress} min</span>` : ''}
+                <div class="queue-item-title-section">
+                    <strong>Pedido #${order.daily_order_number || order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
+                    <div class="queue-item-badges">
+                        <span class="badge ${statusClass}">${queueItem.kitchen_status}</span>
+                        ${timeInProgress !== null ? `<span class="time-badge">${timeInProgress} min</span>` : ''}
+                    </div>
                 </div>
-                <div>
-                    <strong>Total: ${formatCurrency(order.total_amount || 0)}</strong>
+                <div class="queue-item-right-section">
+                    <div class="queue-item-total">
+                        <strong>Total: ${formatCurrency(order.total_amount || 0)}</strong>
+                    </div>
+                    ${actionButton ? `<div class="queue-item-action-button">${actionButton}</div>` : ''}
                 </div>
             </div>
             <div class="order-item-details">
                 ${order.name ? `<p><strong>Nombre:</strong> ${sanitizeString(order.name)}</p>` : ''}
+                ${order.comments ? `<p><strong>📝 Comentarios:</strong> <em style="color: var(--primary-color);">${sanitizeString(order.comments)}</em></p>` : ''}
                 <p><strong>Hora de pedido:</strong> ${new Date(order.created_at).toLocaleString('es-ES')}</p>
                 ${queueItem.start_time ? `<p><strong>Inicio de preparación:</strong> ${new Date(queueItem.start_time).toLocaleString('es-ES')}</p>` : ''}
                 ${queueItem.end_time ? `<p><strong>Completado:</strong> ${new Date(queueItem.end_time).toLocaleString('es-ES')}</p>` : ''}
@@ -277,25 +317,6 @@ function buildQueueItem(queueItem, isReady = false) {
     html += `
                 </ul>
             </div>
-            <div class="queue-item-actions">
-    `;
-    
-    if (queueItem.kitchen_status === 'Pendiente') {
-        html += `
-            <button class="btn btn-primary" onclick="startPreparation(${queueItem.id})">
-                ▶️ Iniciar Preparación
-            </button>
-        `;
-    } else if (queueItem.kitchen_status === 'En preparación') {
-        html += `
-            <button class="btn btn-success" onclick="completePreparation(${queueItem.id})">
-                ✅ Marcar como Listo
-            </button>
-        `;
-    }
-    
-    html += `
-            </div>
         </div>
     `;
     
@@ -315,16 +336,34 @@ function getStatusBadgeClass(status) {
     }
 }
 
+/**
+ * Notifica que se inició la preparación de un pedido
+ * Esto actualiza la lista de pedidos del mesero automáticamente
+ */
+function notifyOrderPreparationStarted(orderId) {
+    const notificationKey = 'order_preparation_started';
+    const timestamp = Date.now();
+    
+    const notification = {
+        timestamp: timestamp,
+        action: 'preparation_started',
+        orderId: orderId
+    };
+    
+    // Actualizar localStorage para notificar a otras pestañas
+    localStorage.setItem(notificationKey, JSON.stringify(notification));
+    
+    // Disparar evento personalizado para la misma ventana
+    const event = new CustomEvent('orderPreparationStarted', {
+        detail: notification,
+        bubbles: true
+    });
+    window.dispatchEvent(event);
+    
+    console.log('Notificación de preparación iniciada enviada:', notification);
+}
+
 async function startPreparation(queueId) {
-    const confirmed = await confirmAction(
-        '¿Iniciar la preparación de este pedido?',
-        'Confirmar Inicio'
-    );
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
         console.log('Iniciando preparación para queue:', queueId);
         const response = await api.patch(`${API_CONFIG.ENDPOINTS.KITCHEN.QUEUE}/${queueId}/start`, {});
@@ -343,15 +382,6 @@ async function startPreparation(queueId) {
 }
 
 async function completePreparation(queueId) {
-    const confirmed = await confirmAction(
-        '¿Marcar este pedido como listo?',
-        'Confirmar Finalización'
-    );
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
         console.log('Completando preparación para queue:', queueId);
         const response = await api.patch(`${API_CONFIG.ENDPOINTS.KITCHEN.QUEUE}/${queueId}/complete`, {});

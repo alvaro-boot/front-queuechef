@@ -272,26 +272,29 @@ function displayProducts() {
     container.innerHTML = html;
 }
 
-async function clearCurrentOrder() {
-    const confirmed = await confirmAction('¿Estás seguro de que quieres limpiar el pedido actual?', 'Limpiar Pedido');
-    if (confirmed) {
-        currentOrder.items = [];
-        
-        // Limpiar el nombre del pedido
-        const orderNameInput = document.getElementById('orderName');
-        if (orderNameInput) {
-            orderNameInput.value = '';
-        }
-        
-        // Restaurar el botón a su estado original
-        const submitBtn = document.getElementById('submitOrderBtn');
-        if (submitBtn) {
-            submitBtn.textContent = '✅ Crear Pedido';
-            submitBtn.onclick = () => submitOrder();
-        }
-        
-        updateOrderDisplay();
+function clearCurrentOrder() {
+    currentOrder.items = [];
+    
+    // Limpiar el nombre del pedido
+    const orderNameInput = document.getElementById('orderName');
+    if (orderNameInput) {
+        orderNameInput.value = '';
     }
+    
+    // Limpiar comentarios
+    const orderCommentsInput = document.getElementById('orderComments');
+    if (orderCommentsInput) {
+        orderCommentsInput.value = '';
+    }
+    
+    // Restaurar el botón a su estado original
+    const submitBtn = document.getElementById('submitOrderBtn');
+    if (submitBtn) {
+        submitBtn.textContent = '✅ Crear Pedido';
+        submitBtn.onclick = () => submitOrder();
+    }
+    
+    updateOrderDisplay();
 }
 
 let currentProductForOrder = null;
@@ -543,14 +546,9 @@ function updateOrderDisplay() {
 }
 
 function removeItemFromOrder(index) {
-    confirmAction('¿Eliminar este item del pedido?', 'Confirmar Eliminación')
-        .then(confirmed => {
-            if (confirmed) {
-                currentOrder.items.splice(index, 1);
-                updateOrderDisplay();
-                showNotification('Item eliminado del pedido', 'info');
-            }
-        });
+    currentOrder.items.splice(index, 1);
+    updateOrderDisplay();
+    showNotification('Item eliminado del pedido', 'info');
 }
 
 async function submitOrder() {
@@ -566,9 +564,11 @@ async function submitOrder() {
     }
     
     try {
-        // Obtener el nombre del pedido si se proporcionó
+        // Obtener el nombre del pedido y comentarios si se proporcionaron
         const orderNameInput = document.getElementById('orderName');
         const orderName = orderNameInput ? orderNameInput.value.trim() : '';
+        const orderCommentsInput = document.getElementById('orderComments');
+        const orderComments = orderCommentsInput ? orderCommentsInput.value.trim() : '';
         
         const orderData = {
             items: currentOrder.items.map(item => {
@@ -604,6 +604,11 @@ async function submitOrder() {
         // Agregar nombre del pedido si se proporcionó
         if (orderName) {
             orderData.name = orderName;
+        }
+        
+        // Agregar comentarios si se proporcionaron
+        if (orderComments) {
+            orderData.comments = orderComments;
         }
         
         console.log('Enviando pedido:', JSON.stringify(orderData, null, 2));
@@ -690,7 +695,7 @@ function displayOrders(orders) {
             <div class="order-item-card">
                 <div class="order-item-header">
                     <div onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
-                        <strong>Pedido #${order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
+                        <strong>Pedido #${order.daily_order_number || order.id}${order.name ? ` - ${sanitizeString(order.name)}` : ''}</strong>
                         <span class="badge ${statusClass}">${order.status}</span>
                         ${isInPreparation ? '<span class="badge badge-info" style="margin-left: 8px;">En Preparación</span>' : ''}
                     </div>
@@ -803,6 +808,12 @@ function editOrder(order) {
         orderNameInput.value = order.name;
     }
     
+    // Cargar los comentarios si existen
+    const orderCommentsInput = document.getElementById('orderComments');
+    if (orderCommentsInput && order.comments) {
+        orderCommentsInput.value = order.comments;
+    }
+    
     // Actualizar la visualización
     updateOrderDisplay();
     
@@ -835,9 +846,11 @@ async function updateOrder(orderId) {
     }
     
     try {
-        // Obtener el nombre del pedido si se proporcionó
+        // Obtener el nombre del pedido y comentarios si se proporcionaron
         const orderNameInput = document.getElementById('orderName');
         const orderName = orderNameInput ? orderNameInput.value.trim() : '';
+        const orderCommentsInput = document.getElementById('orderComments');
+        const orderComments = orderCommentsInput ? orderCommentsInput.value.trim() : '';
         
         const orderData = {
             items: currentOrder.items.map(item => {
@@ -872,6 +885,11 @@ async function updateOrder(orderId) {
             orderData.name = orderName;
         }
         
+        // Agregar comentarios si se proporcionaron
+        if (orderComments) {
+            orderData.comments = orderComments;
+        }
+        
         console.log('Actualizando pedido:', JSON.stringify(orderData, null, 2));
         
         const url = `${API_CONFIG.ENDPOINTS.ORDERS.UPDATE}/${orderId}/edit`;
@@ -885,6 +903,9 @@ async function updateOrder(orderId) {
         currentOrder.items = [];
         if (orderNameInput) {
             orderNameInput.value = '';
+        }
+        if (orderCommentsInput) {
+            orderCommentsInput.value = '';
         }
         updateOrderDisplay();
         await loadOrders();
@@ -944,15 +965,6 @@ async function deleteOrder(orderId) {
         // Verificar que el pedido no esté entregado
         if (order.status === 'Entregado' || order.status === 'ENTREGADO') {
             showNotification('No se puede eliminar un pedido que ya fue entregado', 'warning');
-            return;
-        }
-        
-        const confirmed = await confirmAction(
-            '¿Estás seguro de que deseas eliminar este pedido? El pedido se desactivará y no aparecerá en los listados, pero se mantendrá en la base de datos.',
-            'Confirmar Eliminación'
-        );
-        
-        if (!confirmed) {
             return;
         }
         

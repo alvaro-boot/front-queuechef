@@ -11,21 +11,51 @@
         <div class="header">
             <h1>🍳 Panel de Cocina</h1>
             <div class="user-info">
-                <span id="userName"></span>
-                <button class="btn btn-danger" onclick="authManager.logout()">Cerrar Sesión</button>
+                <span id="userName">👤 Usuario</span>
+                <button class="btn btn-danger" onclick="authManager.logout()">🚪 Cerrar Sesión</button>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Cola de Pedidos</h2>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span id="lastUpdateTime" style="font-size: 0.875rem; color: var(--dark-light);"></span>
+                <h2 class="card-title">📋 Cola de Pedidos</h2>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span id="lastUpdateTime" style="font-size: 0.875rem; color: var(--dark-light); font-weight: 500; padding: 6px 12px; background: var(--light-color); border-radius: var(--radius-md);"></span>
                     <button class="btn btn-primary" onclick="loadKitchenQueue()">🔄 Actualizar</button>
                 </div>
             </div>
-            <div id="kitchenQueue">
-                <p>Cargando cola de pedidos...</p>
+            <div id="kitchenQueue" class="kitchen-queue-container">
+                <div class="kitchen-columns-top">
+                    <div class="kitchen-column" id="requestedColumn">
+                        <div class="column-header">
+                            <h3>📥 Solicitados</h3>
+                            <span class="column-count" id="requestedCount">0</span>
+                        </div>
+                        <div class="column-content" id="requestedContent">
+                            <p class="info-message">Cargando...</p>
+                        </div>
+                    </div>
+                    <div class="kitchen-column" id="inProgressColumn">
+                        <div class="column-header">
+                            <h3>🔄 En Preparación</h3>
+                            <span class="column-count" id="inProgressCount">0</span>
+                        </div>
+                        <div class="column-content" id="inProgressContent">
+                            <p class="info-message">Cargando...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="kitchen-columns-bottom">
+                    <div class="kitchen-column kitchen-column-full" id="completedColumn">
+                        <div class="column-header">
+                            <h3>✅ Completados</h3>
+                            <span class="column-count" id="completedCount">0</span>
+                        </div>
+                        <div class="column-content" id="completedContent">
+                            <p class="info-message">Cargando...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
